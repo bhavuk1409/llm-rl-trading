@@ -1,7 +1,3 @@
-"""
-Advanced Multi-Agent Trading System
-Uses LangGraph for sophisticated agent coordination with OpenRouter LLMs
-"""
 
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
@@ -19,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 class TradingState(TypedDict):
-    """State shared across all agents."""
     ticker: str
     date: str
     market_data: Dict
@@ -46,11 +41,10 @@ class AdvancedMultiAgentSystem:
     
     def __init__(
         self,
-        model: str = "anthropic/claude-3.5-sonnet",
+        model: str = "google/gemini-2.5-flash-lite-preview-09-2025",
         temperature: float = 0.7,
         agent_config: Dict = None
     ):
-        """Initialize multi-agent system with OpenRouter."""
         
         # Initialize LLM with OpenRouter
         self.llm = ChatOpenAI(

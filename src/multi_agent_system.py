@@ -1,60 +1,63 @@
+"""
+Advanced Multi-Agent System for Trading Decisions
+Uses LangChain with OpenRouter for multi-agent collaboration
+"""
 
-from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from typing import TypedDict, List, Dict, Annotated
-import operator
-import logging
-import json
 import os
-from dotenv import load_dotenv
+from typing import Dict, List, Any
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+from pydantic import BaseModel, Field
+import logging
 
-load_dotenv()
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-class TradingState(TypedDict):
-    ticker: str
-    date: str
-    market_data: Dict
-    news: List[Dict]
-    
-    # Agent analyses
-    technical_analysis: Dict
-    fundamental_analysis: Dict
-    sentiment_analysis: Dict
-    risk_analysis: Dict
-    
-    # Agent votes with confidence
-    agent_votes: Annotated[List[Dict], operator.add]
-    
-    # Final decision
-    final_decision: Dict
+# Pydantic schemas for structured output
+class AgentAnalysis(BaseModel):
+    """Schema for individual agent analysis."""
+    recommendation: str = Field(description="buy, sell, or hold")
+    confidence: int = Field(description="confidence level 0-100")
+    reasoning: str = Field(description="explanation of the recommendation")
+
+
+class FinalDecision(BaseModel):
+    """Schema for final trading decision."""
+    action: str = Field(description="buy, sell, or hold")
+    position_size: float = Field(description="position size as decimal (0.0-1.0)")
+    confidence: int = Field(description="overall confidence 0-100")
+    conviction: str = Field(description="low, medium, or high")
+    entry_price: float = Field(description="suggested entry price")
+    stop_loss_price: float = Field(description="stop loss price")
+    take_profit_price: float = Field(description="take profit target")
+    time_horizon: str = Field(description="short-term, medium-term, or long-term")
+    reasoning: str = Field(description="consolidated reasoning from all agents")
 
 
 class AdvancedMultiAgentSystem:
     """
-    Sophisticated multi-agent trading system using LangGraph.
-    Each agent is an expert that performs deep analysis.
+    Multi-agent trading system using LangChain + OpenRouter.
+    Each agent specializes in one analysis type.
     """
     
     def __init__(
         self,
         model: str = "google/gemini-2.5-flash-lite-preview-09-2025",
         temperature: float = 0.7,
-        agent_config: Dict = None
+        agent_config: Dict[str, Any] = None
     ):
+        """
+        Initialize multi-agent system.
         
-        # Initialize LLM with OpenRouter
-        self.llm = ChatOpenAI(
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            base_url="https://openrouter.ai/api/v1",
-            model=model,
-            temperature=temperature,
-            max_tokens=2000
-        )
-        
+        Args:
+            model: OpenRouter model name
+            temperature: LLM temperature
+            agent_config: Agent weights and settings
+        """
+        self.model_name = model
+        self.temperature = temperature
         self.agent_config = agent_config or {
             'technical_analyst': {'enabled': True, 'weight': 0.25},
             'fundamental_analyst': {'enabled': True, 'weight': 0.25},
@@ -62,489 +65,306 @@ class AdvancedMultiAgentSystem:
             'risk_manager': {'enabled': True, 'weight': 0.25}
         }
         
-        # Build agent graph
-        self.graph = self._build_graph()
+        # Initialize LLM
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("OPENROUTER_API_KEY not found in environment")
         
-        logger.info(f"Multi-agent system initialized with model: {model}")
+        self.llm = ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            openai_api_key=api_key,
+            openai_api_base="https://openrouter.ai/api/v1",
+            max_tokens=2000
+        )
+        
+        # Setup agents with parsers
+        self._setup_agents()
+        
+        logger.info(f"✓ Multi-agent system initialized with model: {model}")
     
-    def _build_graph(self) -> StateGraph:
-        """Build LangGraph workflow with parallel agent execution."""
-        workflow = StateGraph(TradingState)
+    def _setup_agents(self):
+        """Create specialized agent chains."""
         
-        # Add all agent nodes
-        workflow.add_node("technical_analyst", self.technical_analyst)
-        workflow.add_node("fundamental_analyst", self.fundamental_analyst)
-        workflow.add_node("sentiment_analyst", self.sentiment_analyst)
-        workflow.add_node("risk_manager", self.risk_manager)
-        workflow.add_node("portfolio_manager", self.portfolio_manager)
-        
-        # Set entry point
-        workflow.set_entry_point("technical_analyst")
-        
-        # Create execution flow
-        workflow.add_edge("technical_analyst", "fundamental_analyst")
-        workflow.add_edge("fundamental_analyst", "sentiment_analyst")
-        workflow.add_edge("sentiment_analyst", "risk_manager")
-        workflow.add_edge("risk_manager", "portfolio_manager")
-        workflow.add_edge("portfolio_manager", END)
-        
-        return workflow.compile()
-    
-    def technical_analyst(self, state: TradingState) -> TradingState:
-        """
-        Deep technical analysis using price action, indicators, and patterns.
-        """
-        if not self.agent_config['technical_analyst']['enabled']:
-            return state
-        
-        logger.info(f"🔧 Technical Analyst analyzing {state['ticker']}...")
-        
-        market = state['market_data']
-        
-        prompt = f"""You are an expert Technical Analyst with 20 years of experience in quantitative trading.
+        # Technical Analyst
+        self.technical_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a technical analyst specializing in chart patterns and indicators.
+Analyze the technical data and provide a structured recommendation.
 
-Analyze {state['ticker']} for {state['date']}:
-
-Market Data:
-- Price: ${market.get('close', 'N/A')}
-- RSI: {market.get('rsi', 'N/A')}
-- MACD: {market.get('macd', 'N/A')}
-- BB Position: {market.get('bb_position', 'N/A')}
-- Volume Ratio: {market.get('volume_ratio', 'N/A')}
-- Momentum: {market.get('momentum', 'N/A')}
-- SMA20: {market.get('sma_20', 'N/A')}
-
-Perform DEEP technical analysis:
-
-1. **Trend Analysis**: Multi-timeframe trend direction and strength
-2. **Momentum**: RSI, MACD, momentum indicators interpretation
-3. **Support/Resistance**: Key price levels based on data
-4. **Volume Analysis**: Volume patterns and implications
-5. **Pattern Recognition**: Chart patterns or setups
-6. **Entry/Exit**: Optimal entry price and stop loss levels
-
-Provide your analysis as JSON:
+Return your analysis as JSON with this exact structure:
 {{
-  "trend": "strong_uptrend|uptrend|neutral|downtrend|strong_downtrend",
-  "momentum": "very_strong|strong|neutral|weak|very_weak",
-  "key_levels": {{"support": <price>, "resistance": <price>}},
-  "volume_signal": "accumulation|distribution|neutral",
-  "pattern": "description of any pattern",
-  "recommendation": "strong_buy|buy|hold|sell|strong_sell",
-  "confidence": <0-100>,
-  "target_price": <price>,
-  "stop_loss": <price>,
-  "reasoning": "detailed 2-3 sentence explanation"
-}}
+    "recommendation": "buy|sell|hold",
+    "confidence": <0-100>,
+    "reasoning": "<your explanation>"
+}}"""),
+            ("user", """Ticker: {ticker}
+Date: {date}
 
-Be specific and actionable. Use precise technical terminology."""
+Technical Indicators:
+{technical_data}
 
-        try:
-            response = self.llm.invoke(prompt)
-            analysis = self._parse_json(response.content)
-            
-            state['technical_analysis'] = analysis
-            state['agent_votes'].append({
-                'agent': 'technical_analyst',
-                'recommendation': analysis.get('recommendation', 'hold'),
-                'confidence': analysis.get('confidence', 50) / 100.0,
-                'weight': self.agent_config['technical_analyst']['weight']
-            })
-            
-            logger.info(f"✓ Technical: {analysis.get('recommendation', 'N/A')} "
-                       f"(confidence: {analysis.get('confidence', 0)}%)")
-            
-        except Exception as e:
-            logger.error(f"Technical analysis error: {e}")
-            state['technical_analysis'] = {'error': str(e)}
-        
-        return state
-    
-    def fundamental_analyst(self, state: TradingState) -> TradingState:
-        """
-        Fundamental analysis considering valuation, growth, and macro factors.
-        """
-        if not self.agent_config['fundamental_analyst']['enabled']:
-            return state
-        
-        logger.info(f"📊 Fundamental Analyst analyzing {state['ticker']}...")
-        
-        prompt = f"""You are an expert Fundamental Analyst specializing in equity valuation and corporate finance.
-
-Analyze {state['ticker']} for {state['date']}:
-
-Technical Context: {state.get('technical_analysis', {}).get('trend', 'N/A')}
-
-Perform comprehensive fundamental analysis:
-
-1. **Valuation**: Assess if stock is undervalued, fairly valued, or overvalued
-2. **Growth Prospects**: Analyze growth trajectory and sustainability
-3. **Competitive Position**: Market position and competitive advantages
-4. **Financial Health**: Balance sheet strength, cash flow quality
-5. **Industry Trends**: Sector dynamics and positioning
-6. **Catalyst Analysis**: Upcoming events or catalysts
-7. **Risk Factors**: Key business and financial risks
-
-Provide analysis as JSON:
-{{
-  "valuation": "deeply_undervalued|undervalued|fair|overvalued|severely_overvalued",
-  "growth_outlook": "exceptional|strong|moderate|weak|declining",
-  "competitive_strength": "dominant|strong|average|weak|struggling",
-  "financial_health": "excellent|good|fair|concerning|poor",
-  "catalysts": ["catalyst1", "catalyst2"],
-  "risks": ["risk1", "risk2"],
-  "recommendation": "strong_buy|buy|hold|sell|strong_sell",
-  "confidence": <0-100>,
-  "fair_value_estimate": <price or null>,
-  "time_horizon": "short|medium|long",
-  "reasoning": "detailed 2-3 sentence explanation"
-}}
-
-Base your analysis on logical reasoning about the company's fundamentals."""
-
-        try:
-            response = self.llm.invoke(prompt)
-            analysis = self._parse_json(response.content)
-            
-            state['fundamental_analysis'] = analysis
-            state['agent_votes'].append({
-                'agent': 'fundamental_analyst',
-                'recommendation': analysis.get('recommendation', 'hold'),
-                'confidence': analysis.get('confidence', 50) / 100.0,
-                'weight': self.agent_config['fundamental_analyst']['weight']
-            })
-            
-            logger.info(f"✓ Fundamental: {analysis.get('recommendation', 'N/A')} "
-                       f"(confidence: {analysis.get('confidence', 0)}%)")
-            
-        except Exception as e:
-            logger.error(f"Fundamental analysis error: {e}")
-            state['fundamental_analysis'] = {'error': str(e)}
-        
-        return state
-    
-    def sentiment_analyst(self, state: TradingState) -> TradingState:
-        """
-        Sentiment analysis from news, social media, and market psychology.
-        """
-        if not self.agent_config['sentiment_analyst']['enabled']:
-            return state
-        
-        logger.info(f"💭 Sentiment Analyst analyzing {state['ticker']}...")
-        
-        news_summary = "\n".join([
-            f"- {item.get('title', 'N/A')} (sentiment: {item.get('sentiment', 'neutral')})"
-            for item in state.get('news', [])
-        ]) or "No recent news"
-        
-        prompt = f"""You are an expert Sentiment Analyst specializing in behavioral finance and market psychology.
-
-Analyze sentiment for {state['ticker']} on {state['date']}:
-
-Recent News:
-{news_summary}
-
-Technical Context: {state.get('technical_analysis', {}).get('trend', 'N/A')}
-Fundamental Context: {state.get('fundamental_analysis', {}).get('growth_outlook', 'N/A')}
-
-Perform deep sentiment analysis:
-
-1. **News Sentiment**: Analyze tone, implications, and market reaction
-2. **Market Psychology**: Fear/greed indicators, sentiment extremes
-3. **Social Sentiment**: Retail vs institutional sentiment
-4. **Sentiment Momentum**: Trend in sentiment (improving/deteriorating)
-5. **Contrarian Indicators**: Identify potential sentiment extremes
-6. **Short-term Impact**: Expected price impact from sentiment
-
-Provide analysis as JSON:
-{{
-  "overall_sentiment": "very_bullish|bullish|neutral|bearish|very_bearish",
-  "news_sentiment_score": <-1.0 to 1.0>,
-  "social_sentiment": "euphoric|optimistic|neutral|pessimistic|panic",
-  "sentiment_trend": "rapidly_improving|improving|stable|deteriorating|rapidly_deteriorating",
-  "fear_greed_index": <0-100>,
-  "contrarian_signal": "extreme_optimism|none|extreme_pessimism",
-  "recommendation": "strong_buy|buy|hold|sell|strong_sell",
-  "confidence": <0-100>,
-  "short_term_impact": "very_positive|positive|neutral|negative|very_negative",
-  "reasoning": "detailed 2-3 sentence explanation"
-}}
-
-Consider both the news content and market psychology."""
-
-        try:
-            response = self.llm.invoke(prompt)
-            analysis = self._parse_json(response.content)
-            
-            state['sentiment_analysis'] = analysis
-            state['agent_votes'].append({
-                'agent': 'sentiment_analyst',
-                'recommendation': analysis.get('recommendation', 'hold'),
-                'confidence': analysis.get('confidence', 50) / 100.0,
-                'weight': self.agent_config['sentiment_analyst']['weight']
-            })
-            
-            logger.info(f"✓ Sentiment: {analysis.get('recommendation', 'N/A')} "
-                       f"(confidence: {analysis.get('confidence', 0)}%)")
-            
-        except Exception as e:
-            logger.error(f"Sentiment analysis error: {e}")
-            state['sentiment_analysis'] = {'error': str(e)}
-        
-        return state
-    
-    def risk_manager(self, state: TradingState) -> TradingState:
-        """
-        Comprehensive risk assessment and position sizing.
-        """
-        if not self.agent_config['risk_manager']['enabled']:
-            return state
-        
-        logger.info(f"⚠️  Risk Manager assessing {state['ticker']}...")
-        
-        votes = state.get('agent_votes', [])
-        votes_summary = "\n".join([
-            f"- {v['agent']}: {v['recommendation']} (conf: {v['confidence']:.2f})"
-            for v in votes
+Provide your technical analysis.""")
         ])
         
-        prompt = f"""You are an expert Risk Manager with expertise in portfolio risk management and capital preservation.
+        # Fundamental Analyst
+        self.fundamental_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a fundamental analyst specializing in company valuation and market conditions.
+Analyze the fundamental data and provide a structured recommendation.
 
-Assess risk for {state['ticker']} on {state['date']}:
-
-Agent Recommendations:
-{votes_summary}
-
-Technical Analysis: {state.get('technical_analysis', {}).get('trend', 'N/A')}
-Market Data: RSI={state['market_data'].get('rsi', 'N/A')}, 
-             Volatility indicators available
-
-Perform comprehensive risk assessment:
-
-1. **Market Risk**: Volatility, beta, correlation risks
-2. **Liquidity Risk**: Ability to enter/exit positions
-3. **Event Risk**: Upcoming earnings, news, macro events
-4. **Drawdown Risk**: Potential maximum loss scenarios
-5. **Position Sizing**: Appropriate position size given risk
-6. **Stop Loss**: Optimal stop loss level
-7. **Risk/Reward**: Assess risk-adjusted return potential
-
-Provide analysis as JSON:
+Return your analysis as JSON with this exact structure:
 {{
-  "overall_risk": "very_low|low|moderate|high|very_high",
-  "market_risk": "low|moderate|high",
-  "liquidity_risk": "low|moderate|high",
-  "event_risk": "low|moderate|high",
-  "max_position_size": <0.0-1.0 as fraction>,
-  "recommended_stop_loss": <percentage like 0.05 for 5%>,
-  "recommended_take_profit": <percentage>,
-  "risk_reward_ratio": <ratio like 3.0>,
-  "max_drawdown_risk": <percentage>,
-  "recommendation": "strong_buy|buy|hold|sell|strong_sell",
-  "confidence": <0-100>,
-  "risk_factors": ["factor1", "factor2"],
-  "reasoning": "detailed 2-3 sentence explanation"
-}}
+    "recommendation": "buy|sell|hold",
+    "confidence": <0-100>,
+    "reasoning": "<your explanation>"
+}}"""),
+            ("user", """Ticker: {ticker}
+Date: {date}
 
-Prioritize capital preservation and proper risk management."""
+Market Data:
+{market_data}
 
-        try:
-            response = self.llm.invoke(prompt)
-            analysis = self._parse_json(response.content)
-            
-            state['risk_analysis'] = analysis
-            state['agent_votes'].append({
-                'agent': 'risk_manager',
-                'recommendation': analysis.get('recommendation', 'hold'),
-                'confidence': analysis.get('confidence', 50) / 100.0,
-                'weight': self.agent_config['risk_manager']['weight']
-            })
-            
-            logger.info(f"✓ Risk: {analysis.get('recommendation', 'N/A')} "
-                       f"(confidence: {analysis.get('confidence', 0)}%)")
-            
-        except Exception as e:
-            logger.error(f"Risk analysis error: {e}")
-            state['risk_analysis'] = {'error': str(e)}
+Provide your fundamental analysis.""")
+        ])
         
-        return state
-    
-    def portfolio_manager(self, state: TradingState) -> TradingState:
-        """
-        Final decision synthesis from all agents using weighted voting.
-        """
-        logger.info(f"🎯 Portfolio Manager making final decision for {state['ticker']}...")
-        
-        votes = state.get('agent_votes', [])
-        
-        # Synthesize all analyses
-        analyses_summary = f"""
-Technical Analysis: {json.dumps(state.get('technical_analysis', {}), indent=2)}
+        # Sentiment Analyst
+        self.sentiment_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a sentiment analyst specializing in news and market sentiment.
+Analyze the news sentiment and provide a structured recommendation.
 
-Fundamental Analysis: {json.dumps(state.get('fundamental_analysis', {}), indent=2)}
-
-Sentiment Analysis: {json.dumps(state.get('sentiment_analysis', {}), indent=2)}
-
-Risk Analysis: {json.dumps(state.get('risk_analysis', {}), indent=2)}
-
-Agent Votes:
-{json.dumps(votes, indent=2)}
-"""
-        
-        prompt = f"""You are an expert Portfolio Manager responsible for final trading decisions.
-
-Synthesize all analyses for {state['ticker']} on {state['date']}:
-
-{analyses_summary}
-
-Make a comprehensive final decision considering:
-
-1. **Consensus Analysis**: Synthesize all agent recommendations
-2. **Conviction Level**: Assess agreement/disagreement among agents
-3. **Position Sizing**: Appropriate size given risk and conviction
-4. **Entry Strategy**: Market order, limit order, or staged entry
-5. **Exit Strategy**: Stop loss, take profit, time horizon
-6. **Alternative Scenarios**: What could go wrong/right
-
-Provide final decision as JSON:
+Return your analysis as JSON with this exact structure:
 {{
-  "action": "strong_buy|buy|hold|sell|strong_sell",
-  "conviction": "very_high|high|moderate|low|very_low",
-  "position_size": <0.0-1.0 as fraction of portfolio>,
-  "entry_price": <target price or "market">,
-  "stop_loss_price": <price>,
-  "take_profit_price": <price>,
-  "time_horizon": "1-3 days|1-2 weeks|1-3 months|long-term",
-  "confidence": <0-100>,
-  "key_factors": ["most important factor 1", "factor 2", "factor 3"],
-  "risks": ["key risk 1", "key risk 2"],
-  "alternative_scenario": "what could invalidate this decision",
-  "reasoning": "comprehensive 3-5 sentence synthesis of all analyses"
-}}
+    "recommendation": "buy|sell|hold",
+    "confidence": <0-100>,
+    "reasoning": "<your explanation>"
+}}"""),
+            ("user", """Ticker: {ticker}
+Date: {date}
 
-Make a decisive, well-reasoned final call."""
+Recent News:
+{news}
 
-        try:
-            response = self.llm.invoke(prompt)
-            decision = self._parse_json(response.content)
-            
-            state['final_decision'] = decision
-            
-            logger.info(f"✓ Final Decision: {decision.get('action', 'N/A').upper()} "
-                       f"(conviction: {decision.get('conviction', 'N/A')}, "
-                       f"confidence: {decision.get('confidence', 0)}%)")
-            
-        except Exception as e:
-            logger.error(f"Portfolio manager error: {e}")
-            state['final_decision'] = {
-                'action': 'hold',
-                'reasoning': f'Error in decision making: {str(e)}'
-            }
+Provide your sentiment analysis.""")
+        ])
         
-        return state
+        # Risk Manager
+        self.risk_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are a risk manager specializing in portfolio risk assessment.
+Analyze the risk factors and provide a structured recommendation.
+
+Return your analysis as JSON with this exact structure:
+{{
+    "recommendation": "buy|sell|hold",
+    "confidence": <0-100>,
+    "reasoning": "<your explanation>"
+}}"""),
+            ("user", """Ticker: {ticker}
+Date: {date}
+
+Market Data:
+{market_data}
+
+Assess the risk and provide your recommendation.""")
+        ])
+        
+        # Coordinator for final decision
+        self.coordinator_prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are the head trader coordinating all analyst recommendations.
+Synthesize the agent analyses into a final trading decision with specific parameters.
+
+Return your decision as JSON with this exact structure:
+{{
+    "action": "buy|sell|hold",
+    "position_size": <0.0-1.0>,
+    "confidence": <0-100>,
+    "conviction": "low|medium|high",
+    "entry_price": <price>,
+    "stop_loss_price": <price>,
+    "take_profit_price": <price>,
+    "time_horizon": "short-term|medium-term|long-term",
+    "reasoning": "<consolidated explanation>"
+}}"""),
+            ("user", """Ticker: {ticker}
+Date: {date}
+Current Price: {current_price}
+
+Agent Analyses:
+{agent_analyses}
+
+Provide your final coordinated decision.""")
+        ])
+        
+        # Setup parsers
+        self.agent_parser = JsonOutputParser(pydantic_object=AgentAnalysis)
+        self.decision_parser = JsonOutputParser(pydantic_object=FinalDecision)
     
     def analyze(
         self,
         ticker: str,
         date: str,
-        market_data: Dict,
-        news: List[Dict] = None
-    ) -> Dict:
+        market_data: Dict[str, Any],
+        news: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         """
-        Run complete multi-agent analysis.
+        Run multi-agent analysis.
         
         Args:
             ticker: Stock ticker
             date: Analysis date
-            market_data: Market data and indicators
-            news: List of news items
+            market_data: Technical/fundamental data
+            news: News articles
             
         Returns:
-            Complete analysis with final decision
+            Complete analysis with all agent outputs and final decision
         """
-        logger.info(f"\n{'='*60}")
-        logger.info(f"Starting Multi-Agent Analysis: {ticker} on {date}")
-        logger.info(f"{'='*60}")
+        logger.info(f"🤖 Running multi-agent analysis for {ticker} on {date}")
         
-        initial_state = TradingState(
-            ticker=ticker,
-            date=date,
-            market_data=market_data,
-            news=news or [],
-            technical_analysis={},
-            fundamental_analysis={},
-            sentiment_analysis={},
-            risk_analysis={},
-            agent_votes=[],
-            final_decision={}
-        )
+        results = {}
         
+        # 1. Technical Analysis
+        if self.agent_config['technical_analyst']['enabled']:
+            try:
+                tech_chain = self.technical_prompt | self.llm | self.agent_parser
+                results['technical_analysis'] = tech_chain.invoke({
+                    'ticker': ticker,
+                    'date': date,
+                    'technical_data': self._format_technical(market_data)
+                })
+                logger.info("  ✓ Technical analysis complete")
+            except Exception as e:
+                logger.error(f"Technical analysis failed: {e}")
+                results['technical_analysis'] = self._default_analysis()
+        
+        # 2. Fundamental Analysis
+        if self.agent_config['fundamental_analyst']['enabled']:
+            try:
+                fund_chain = self.fundamental_prompt | self.llm | self.agent_parser
+                results['fundamental_analysis'] = fund_chain.invoke({
+                    'ticker': ticker,
+                    'date': date,
+                    'market_data': self._format_fundamental(market_data)
+                })
+                logger.info("  ✓ Fundamental analysis complete")
+            except Exception as e:
+                logger.error(f"Fundamental analysis failed: {e}")
+                results['fundamental_analysis'] = self._default_analysis()
+        
+        # 3. Sentiment Analysis
+        if self.agent_config['sentiment_analyst']['enabled']:
+            try:
+                sentiment_chain = self.sentiment_prompt | self.llm | self.agent_parser
+                results['sentiment_analysis'] = sentiment_chain.invoke({
+                    'ticker': ticker,
+                    'date': date,
+                    'news': self._format_news(news)
+                })
+                logger.info("  ✓ Sentiment analysis complete")
+            except Exception as e:
+                logger.error(f"Sentiment analysis failed: {e}")
+                results['sentiment_analysis'] = self._default_analysis()
+        
+        # 4. Risk Assessment
+        if self.agent_config['risk_manager']['enabled']:
+            try:
+                risk_chain = self.risk_prompt | self.llm | self.agent_parser
+                results['risk_analysis'] = risk_chain.invoke({
+                    'ticker': ticker,
+                    'date': date,
+                    'market_data': self._format_risk(market_data)
+                })
+                logger.info("  ✓ Risk analysis complete")
+            except Exception as e:
+                logger.error(f"Risk analysis failed: {e}")
+                results['risk_analysis'] = self._default_analysis()
+        
+        # 5. Coordinator Decision
         try:
-            result = self.graph.invoke(initial_state)
-            logger.info(f"{'='*60}")
-            logger.info("✅ Multi-Agent Analysis Complete!")
-            logger.info(f"{'='*60}\n")
-            return result
+            coord_chain = self.coordinator_prompt | self.llm | self.decision_parser
+            results['final_decision'] = coord_chain.invoke({
+                'ticker': ticker,
+                'date': date,
+                'current_price': market_data.get('close', 0),
+                'agent_analyses': self._format_agent_results(results)
+            })
+            logger.info("  ✓ Final decision made")
         except Exception as e:
-            logger.error(f"Multi-agent analysis failed: {e}")
-            return {
-                'final_decision': {
-                    'action': 'hold',
-                    'reasoning': f'Analysis error: {str(e)}'
-                }
-            }
+            logger.error(f"Coordinator failed: {e}")
+            results['final_decision'] = self._default_decision(market_data.get('close', 0))
+        
+        return results
     
-    def _parse_json(self, text: str) -> Dict:
-        """Extract and parse JSON from LLM response."""
-        try:
-            # Find JSON in response
-            start = text.find('{')
-            end = text.rfind('}') + 1
-            if start != -1 and end > start:
-                json_str = text[start:end]
-                return json.loads(json_str)
-            return {}
-        except Exception as e:
-            logger.error(f"JSON parsing error: {e}")
-            return {}
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    def _format_technical(self, data: Dict[str, Any]) -> str:
+        """Format technical indicators."""
+        return f"""
+- RSI: {data.get('rsi', 'N/A')}
+- MACD: {data.get('macd', 'N/A')}
+- SMA 20: {data.get('sma_20', 'N/A')}
+- Bollinger Band Position: {data.get('bb_position', 'N/A')}
+- Volume Ratio: {data.get('volume_ratio', 'N/A')}
+- Momentum: {data.get('momentum', 'N/A')}
+"""
     
-    # Test multi-agent system
-    system = AdvancedMultiAgentSystem()
+    def _format_fundamental(self, data: Dict[str, Any]) -> str:
+        """Format fundamental data."""
+        return f"""
+- Close Price: ${data.get('close', 'N/A')}
+- Volume: {data.get('volume', 'N/A'):,}
+- 20-day SMA: ${data.get('sma_20', 'N/A')}
+"""
     
-    # Sample data
-    market_data = {
-        'close': 180.5,
-        'volume': 50000000,
-        'sma_20': 178.2,
-        'rsi': 65.3,
-        'macd': 1.2,
-        'bb_position': 0.7,
-        'volume_ratio': 1.3,
-        'momentum': 5.2
-    }
+    def _format_risk(self, data: Dict[str, Any]) -> str:
+        """Format risk data."""
+        return f"""
+- Current Price: ${data.get('close', 'N/A')}
+- Volatility (RSI): {data.get('rsi', 'N/A')}
+- Volume: {data.get('volume', 'N/A'):,}
+"""
     
-    news = [
-        {'title': 'Company reports strong earnings', 'sentiment': 'positive'},
-        {'title': 'New product launch announced', 'sentiment': 'positive'}
-    ]
+    def _format_news(self, news: List[Dict[str, Any]]) -> str:
+        """Format news articles."""
+        if not news:
+            return "No recent news available"
+        
+        formatted = []
+        for item in news[:5]:  # Limit to 5 articles
+            formatted.append(f"- {item.get('title', 'N/A')} ({item.get('sentiment', 'neutral')})")
+        
+        return "\n".join(formatted)
     
-    # Run analysis
-    result = system.analyze(
-        ticker="AAPL",
-        date="2024-01-16",
-        market_data=market_data,
-        news=news
-    )
+    def _format_agent_results(self, results: Dict[str, Any]) -> str:
+        """Format agent analyses for coordinator."""
+        formatted = []
+        
+        for key in ['technical_analysis', 'fundamental_analysis', 'sentiment_analysis', 'risk_analysis']:
+            if key in results:
+                analysis = results[key]
+                name = key.replace('_', ' ').title()
+                formatted.append(f"""
+{name}:
+- Recommendation: {analysis.get('recommendation', 'N/A')}
+- Confidence: {analysis.get('confidence', 0)}%
+- Reasoning: {analysis.get('reasoning', 'N/A')}
+""")
+        
+        return "\n".join(formatted)
     
-    print("\n" + "="*60)
-    print("FINAL DECISION:")
-    print("="*60)
-    decision = result['final_decision']
-    print(f"Action: {decision.get('action', 'N/A')}")
-    print(f"Position Size: {decision.get('position_size', 0):.1%}")
-    print(f"Confidence: {decision.get('confidence', 0)}%")
-    print(f"Reasoning: {decision.get('reasoning', 'N/A')}")
+    def _default_analysis(self) -> Dict[str, Any]:
+        """Return default analysis on error."""
+        return {
+            'recommendation': 'hold',
+            'confidence': 50,
+            'reasoning': 'Analysis unavailable'
+        }
+    
+    def _default_decision(self, current_price: float) -> Dict[str, Any]:
+        """Return default decision on error."""
+        return {
+            'action': 'hold',
+            'position_size': 0.0,
+            'confidence': 50,
+            'conviction': 'low',
+            'entry_price': current_price,
+            'stop_loss_price': current_price * 0.95,
+            'take_profit_price': current_price * 1.05,
+            'time_horizon': 'medium-term',
+            'reasoning': 'Decision unavailable - defaulting to hold'
+        }

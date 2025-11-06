@@ -20,3 +20,6 @@ pyyaml>=6.0
 python-dotenv>=1.0.0
 matplotlib>=3.7.0
 tqdm>=4.66.0
+
+exa-py>=1.0.0
+streamlit>=1.28.0

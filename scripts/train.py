@@ -182,7 +182,7 @@ def train_with_llm_advisor(config: dict):
                     continue
                 
                 market_data = handler.get_market_summary(train_df, ticker, date)
-                news = handler.generate_mock_news(ticker)
+                news = handler.fetch_news_exa(ticker, days_back=7)
                 
                 # Get LLM analysis
                 result = llm_system.analyze(
@@ -279,73 +279,64 @@ def evaluate_model(model, env, n_episodes: int = 10):
     logger.info(f"  Min Return: {np.min(episode_returns):.2f}%")
     logger.info(f"  Max Return: {np.max(episode_returns):.2f}%")
 
+def evaluate_model(model, env, n_episodes: int = 10):
+    """Evaluate trained model."""
+    logger.info(f"Evaluating model over {n_episodes} episodes...")
+    
+    episode_returns = []
+    
+    for episode in range(n_episodes):
+        obs, _ = env.reset()
+        done = False
+        episode_return = 0
+        
+        while not done:
+            action, _ = model.predict(obs, deterministic=True)
+            obs, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+            episode_return += reward
+        
+        final_return = info['return']
+        episode_returns.append(final_return)
+        
+        logger.info(f"  Episode {episode + 1}: Return = {final_return:.2f}%")
+    
+    logger.info("\n📊 Evaluation Results:")
+    logger.info(f"  Mean Return: {np.mean(episode_returns):.2f}%")
+    logger.info(f"  Std Return: {np.std(episode_returns):.2f}%")
+    logger.info(f"  Min Return: {np.min(episode_returns):.2f}%")
+    logger.info(f"  Max Return: {np.max(episode_returns):.2f}%")
+
 
 def test_llm_system(config: dict):
-    """Test LLM multi-agent system independently."""
+    """
+    Test LLM multi-agent system with Streamlit UI.
+    
+    Args:
+        config: Configuration dictionary
+    """
     logger.info("="*60)
     logger.info("TESTING LLM MULTI-AGENT SYSTEM")
+    logger.info("Launching Streamlit UI...")
     logger.info("="*60)
     
-    # Initialize
-    llm_system = AdvancedMultiAgentSystem(
-        model=config['llm']['model'],
-        temperature=config['llm']['temperature'],
-        agent_config=config['agents']
-    )
+    import subprocess
     
-    # Sample market data
-    market_data = {
-        'close': 180.5,
-        'volume': 50000000,
-        'sma_20': 178.2,
-        'rsi': 65.3,
-        'macd': 1.2,
-        'bb_position': 0.7,
-        'volume_ratio': 1.3,
-        'momentum': 5.2
-    }
+    # Get path to streamlit app
+    streamlit_app = Path(__file__).parent.parent / "streamlit_app.py"
     
-    news = [
-        {'title': 'Strong quarterly earnings reported', 'sentiment': 'positive'},
-        {'title': 'New product launch successful', 'sentiment': 'positive'},
-        {'title': 'Market volatility concerns', 'sentiment': 'negative'}
-    ]
-    
-    # Run analysis
-    result = llm_system.analyze(
-        ticker="AAPL",
-        date="2024-01-16",
-        market_data=market_data,
-        news=news
-    )
-    
-    # Display results
-    logger.info("\n" + "="*60)
-    logger.info("MULTI-AGENT ANALYSIS RESULTS")
-    logger.info("="*60)
-    
-    logger.info("\n📊 Agent Analyses:")
-    for key in ['technical_analysis', 'fundamental_analysis', 'sentiment_analysis', 'risk_analysis']:
-        if key in result and result[key]:
-            logger.info(f"\n{key.replace('_', ' ').title()}:")
-            analysis = result[key]
-            logger.info(f"  Recommendation: {analysis.get('recommendation', 'N/A')}")
-            logger.info(f"  Confidence: {analysis.get('confidence', 0)}%")
-            logger.info(f"  Reasoning: {analysis.get('reasoning', 'N/A')}")
-    
-    logger.info("\n🎯 Final Decision:")
-    decision = result['final_decision']
-    logger.info(f"  Action: {decision.get('action', 'N/A').upper()}")
-    logger.info(f"  Conviction: {decision.get('conviction', 'N/A')}")
-    logger.info(f"  Position Size: {decision.get('position_size', 0):.1%}")
-    logger.info(f"  Confidence: {decision.get('confidence', 0)}%")
-    logger.info(f"  Entry: {decision.get('entry_price', 'N/A')}")
-    logger.info(f"  Stop Loss: {decision.get('stop_loss_price', 'N/A')}")
-    logger.info(f"  Take Profit: {decision.get('take_profit_price', 'N/A')}")
-    logger.info(f"  Time Horizon: {decision.get('time_horizon', 'N/A')}")
-    logger.info(f"\n  Reasoning: {decision.get('reasoning', 'N/A')}")
-    
-    logger.info("\n" + "="*60)
+    # Launch Streamlit
+    try:
+        subprocess.run(
+            ["streamlit", "run", str(streamlit_app)],
+            check=True
+        )
+    except KeyboardInterrupt:
+        logger.info("\n👋 Streamlit UI closed")
+    except Exception as e:
+        logger.error(f"Error launching Streamlit: {e}")
+        logger.info("\nAlternatively, run manually:")
+        logger.info(f"  streamlit run {streamlit_app}")
 
 
 def main():

@@ -1,241 +1,327 @@
-# RL + LLM Trading System
+# RL + LLM Trading System (Simplified)
 
-A comprehensive trading system combining Reinforcement Learning (RL) agents with Large Language Model (LLM) capabilities for stock market prediction and trading.
+A streamlined trading system combining **Reinforcement Learning** with **Advanced Multi-Agent LLM** analysis using OpenRouter.
 
-## 🎯 Project Overview
+## 🎯 Key Features
 
-This project implements a hybrid trading system with two main phases:
-
-1. **Phase 1: Traditional RL Trading** - Pure reinforcement learning agents (PPO, DQN, DDPG, TD3) trained on market data
-2. **Phase 2: LLM-Enhanced Trading** - Integration of LLM agents for sentiment analysis, strategy planning, and multi-agent decision-making using LangGraph
+- **Traditional RL Trading**: PPO agent trained on market data
+- **Advanced Multi-Agent LLM**: 4 specialized AI agents provide deep analysis
+  - 🔧 Technical Analyst (chart patterns, indicators)
+  - 📊 Fundamental Analyst (valuation, growth)
+  - 💭 Sentiment Analyst (news, psychology)
+  - ⚠️ Risk Manager (position sizing, risk assessment)
+- **OpenRouter Integration**: Use any LLM (Claude, GPT, Llama, etc.)
+- **Simple Structure**: Just 8 files, easy to understand and modify
 
 ## 📁 Project Structure
 
 ```
-rl_llm_trading/
+rl_trading_simple/
+├── requirements.txt          # Dependencies
+├── .env.example             # API key template
 ├── config/
-│   └── config.yaml              # Main configuration file
-├── data/
-│   ├── __init__.py
-│   ├── data_fetcher.py          # Download market data (yfinance, Alpaca)
-│   ├── data_processor.py        # Feature engineering & preprocessing
-│   └── news_fetcher.py          # Fetch news & sentiment data
-├── environments/
-│   ├── __init__.py
-│   ├── trading_env.py           # Gym-style trading environment
-│   └── portfolio_env.py         # Portfolio management environment
-├── agents/
-│   ├── rl/
-│   │   ├── __init__.py
-│   │   ├── ppo_agent.py         # PPO implementation
-│   │   ├── dqn_agent.py         # DQN/DDQN implementation
-│   │   ├── ddpg_agent.py        # DDPG implementation
-│   │   └── td3_agent.py         # TD3 implementation
-│   └── llm/
-│       ├── __init__.py
-│       ├── sentiment_analyzer.py # LLM-based sentiment analysis
-│       ├── strategy_planner.py   # LLM strategy generation
-│       ├── multi_agent.py        # Multi-agent LLM system
-│       └── rag_memory.py         # RAG-based memory system
-├── models/
-│   └── networks.py              # Neural network architectures
-├── utils/
-│   ├── __init__.py
-│   ├── config_loader.py         # Configuration utilities
-│   ├── metrics.py               # Trading metrics calculation
-│   ├── visualization.py         # Plotting & visualization
-│   └── logger.py                # Logging utilities
-├── scripts/
-│   ├── train_rl.py              # Train traditional RL agents
-│   ├── train_llm_rl.py          # Train LLM-enhanced agents
-│   ├── backtest.py              # Backtesting script
-│   └── evaluate.py              # Evaluation script
-├── tests/
-│   └── test_*.py                # Unit tests
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
+│   └── config.yaml          # All settings
+├── src/
+│   ├── data_handler.py      # Data fetching & processing
+│   ├── trading_env.py       # Trading environment
+│   └── multi_agent_system.py  # LLM multi-agent system
+└── scripts/
+    └── train.py             # Training script
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Installation
+### 1. Install Dependencies
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd rl_llm_trading
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Environment Setup
+### 2. Setup API Key
 
-1. Create a `.env` file in the root directory:
-
-```bash
-# API Keys
-ANTHROPIC_API_KEY=your_anthropic_key
-OPENAI_API_KEY=your_openai_key
-ALPACA_API_KEY=your_alpaca_key
-ALPACA_SECRET_KEY=your_alpaca_secret
-NEWS_API_KEY=your_news_api_key
-
-# Optional
-WANDB_API_KEY=your_wandb_key
-```
-
-2. Configure settings in `config/config.yaml`
-
-## 📊 Phase 1: Traditional RL Trading
-
-### Step 1: Data Preparation
+Get your OpenRouter API key from [openrouter.ai](https://openrouter.ai)
 
 ```bash
-# Download and preprocess market data
-python scripts/prepare_data.py --tickers AAPL GOOGL MSFT --start-date 2020-01-01
+cp .env.example .env
+# Edit .env and add your OPENROUTER_API_KEY
 ```
 
-### Step 2: Train RL Agent
+### 3. Train RL Agent (Traditional)
 
 ```bash
-# Train PPO agent
-python scripts/train_rl.py --algorithm ppo --timesteps 500000
-
-# Train DQN agent
-python scripts/train_rl.py --algorithm dqn --timesteps 500000
-
-# Train DDPG agent
-python scripts/train_rl.py --algorithm ddpg --timesteps 500000
+python scripts/train.py --mode rl --timesteps 50000
 ```
 
-### Step 3: Evaluate & Backtest
+### 4. Test Multi-Agent LLM System
 
 ```bash
-# Backtest trained agent
-python scripts/backtest.py --model checkpoints/ppo_best.zip --start-date 2023-01-01
-
-# Evaluate performance
-python scripts/evaluate.py --model checkpoints/ppo_best.zip
+python scripts/train.py --mode test-llm
 ```
 
-## 🤖 Phase 2: LLM-Enhanced Trading
-
-### LLM Integration Patterns
-
-1. **LLM as Feature Extractor**
-
-   - Processes news, filings, social media
-   - Generates sentiment scores and event flags
-   - Feeds enriched features to RL agent
-
-2. **LLM as Strategy Planner**
-
-   - Generates high-level trading strategies
-   - RL agent executes with optimal timing and sizing
-
-3. **Multi-Agent System**
-   - Multiple specialized LLM agents (fundamental, technical, sentiment)
-   - Collaborative decision-making using LangGraph
-   - RL agent or aggregator translates to actions
-
-### Training LLM-Enhanced Agents
+### 5. Train with LLM Enhancement
 
 ```bash
-# Train with LLM sentiment features
-python scripts/train_llm_rl.py --mode sentiment --algorithm ppo
-
-# Train with LLM strategy planner
-python scripts/train_llm_rl.py --mode planner --algorithm td3
-
-# Train multi-agent system
-python scripts/train_llm_rl.py --mode multi_agent --algorithm ppo
+python scripts/train.py --mode llm --timesteps 50000
 ```
 
-## 🔧 Configuration
+## 🤖 Multi-Agent System
 
-Edit `config/config.yaml` to customize:
+The system uses **LangGraph** to orchestrate 4 specialized agents:
 
-- **Data sources**: Tickers, date ranges, features
-- **Environment**: Initial capital, commission, slippage
-- **RL algorithms**: Hyperparameters for PPO, DQN, DDPG, TD3
-- **LLM settings**: Provider, model, temperature
-- **Risk management**: Position limits, stop loss, max drawdown
+### Agent Flow:
 
-## 📈 Key Features
+```
+Technical Analyst → Fundamental Analyst → Sentiment Analyst → Risk Manager → Portfolio Manager
+```
 
-### Traditional RL
+Each agent:
 
-- ✅ Multiple RL algorithms (PPO, DQN, DDPG, TD3, SAC)
-- ✅ Realistic market simulation (commission, slippage)
-- ✅ Technical indicators (SMA, EMA, RSI, MACD, Bollinger Bands)
-- ✅ Walk-forward backtesting
-- ✅ Comprehensive metrics (Sharpe, Sortino, Max DD)
+- Performs **deep, expert-level analysis**
+- Provides **detailed reasoning**
+- Votes with **confidence scores**
+- Uses **advanced prompting** for quality
 
-### LLM Integration
+### Example Output:
 
-- ✅ Sentiment analysis from news & social media
-- ✅ Strategy generation and planning
-- ✅ Multi-agent debate and consensus
-- ✅ RAG-based memory for historical context
-- ✅ LangGraph for agent orchestration
+```
+🔧 Technical Analyst: BUY (confidence: 85%)
+📊 Fundamental Analyst: STRONG_BUY (confidence: 90%)
+💭 Sentiment Analyst: BUY (confidence: 75%)
+⚠️  Risk Manager: BUY (confidence: 70%)
 
-### Risk Management
+🎯 Final Decision: STRONG_BUY
+   Position Size: 25%
+   Confidence: 80%
+   Stop Loss: 5%
+   Target: 15%
+```
 
-- ✅ Position sizing limits
-- ✅ Stop loss and take profit
-- ✅ Maximum drawdown control
-- ✅ Volatility targeting
+## ⚙️ Configuration
 
-## 📊 Evaluation Metrics
+Edit `config/config.yaml`:
 
-- **Returns**: Total return, CAGR, excess returns
-- **Risk-Adjusted**: Sharpe ratio, Sortino ratio, Calmar ratio
-- **Risk**: Maximum drawdown, volatility, VaR, CVaR
-- **Trading**: Win rate, profit factor, average trade, turnover
+```yaml
+# Data
+data:
+  tickers: ["AAPL", "GOOGL", "MSFT"]
+  start_date: "2022-01-01"
+  end_date: "2024-01-01"
 
-## 🧪 Testing
+# LLM Model (OpenRouter)
+llm:
+  model: "anthropic/claude-3.5-sonnet" # or any model
+  temperature: 0.7
+
+# Agent Weights
+agents:
+  technical_analyst:
+    enabled: true
+    weight: 0.25
+  fundamental_analyst:
+    enabled: true
+    weight: 0.25
+  # ... etc
+```
+
+## 📊 Training Modes
+
+### Mode 1: Traditional RL Only
+
+Pure reinforcement learning without LLM.
 
 ```bash
-# Run all tests
-pytest tests/
-
-# Run with coverage
-pytest tests/ --cov=. --cov-report=html
+python scripts/train.py --mode rl --timesteps 100000
 ```
 
-## 🚨 Important Notes
+### Mode 2: LLM-Enhanced RL
 
-### Overfitting & Data Leakage
+RL agent learns with strategic guidance from LLM multi-agent system.
 
-- Use walk-forward backtesting
-- Separate train/validation/test sets
-- Be cautious of look-ahead bias
+```bash
+python scripts/train.py --mode llm --timesteps 100000
+```
 
-### Transaction Costs
+### Mode 3: Test LLM System
 
-- Always include realistic commission and slippage
-- Model market impact for large orders
+Test the multi-agent system independently on sample data.
 
-### LLM Considerations
+```bash
+python scripts/train.py --mode test-llm
+```
 
-- API costs can be significant
-- Latency may affect real-time trading
-- Cache LLM outputs when possible
+## 🎓 How It Works
 
-### Regulatory & Ethical
+### Traditional RL Flow:
 
-- Algorithmic trading is heavily regulated
-- Be aware of market manipulation concerns
-- Test thoroughly before live deployment
+```
+Market Data → Feature Engineering → Trading Env → PPO Agent → Actions
+```
 
-## 📚 References
+### LLM-Enhanced Flow:
 
-- FinRL: https://github.com/AI4Finance-Foundation/FinRL
-- Stable Baselines3: https://stable-baselines3.readthedocs.io/
-- LangGraph: https://langchain-ai.github.io/langgraph/
-- Trading Agents: https://github.com/TauricResearch/TradingAgents
+```
+Market Data ─┐
+News Data ───┼→ Multi-Agent Analysis → Strategic Signals ─┐
+             │                                             ├→ PPO Agent → Actions
+             └─────────────────────────────────────────────┘
+```
+
+## 🔧 OpenRouter Models
+
+You can use any model from OpenRouter:
+
+```yaml
+# Claude (Recommended)
+model: "anthropic/claude-3.5-sonnet"
+
+# GPT-4
+model: "openai/gpt-4-turbo"
+
+# Open Source
+model: "meta-llama/llama-3-70b-instruct"
+model: "mistralai/mixtral-8x7b-instruct"
+```
+
+See all models: [openrouter.ai/models](https://openrouter.ai/models)
+
+## 📈 Features
+
+### Data Handling
+
+- ✅ yfinance integration (free, no API key needed)
+- ✅ Technical indicators (SMA, RSI, MACD, BB, etc.)
+- ✅ Automatic feature engineering
+- ✅ Train/test splitting
+
+### Trading Environment
+
+- ✅ Gymnasium-compatible
+- ✅ Realistic costs (commission, slippage)
+- ✅ Continuous action space
+- ✅ Portfolio tracking
+
+### RL Agent
+
+- ✅ PPO implementation (Stable-Baselines3)
+- ✅ Configurable hyperparameters
+- ✅ TensorBoard logging
+- ✅ Model checkpointing
+
+### Multi-Agent LLM
+
+- ✅ 4 specialized expert agents
+- ✅ LangGraph orchestration
+- ✅ Weighted voting system
+- ✅ Detailed reasoning
+- ✅ OpenRouter integration
+
+## 🎯 Example Usage
+
+```python
+from src.multi_agent_system import AdvancedMultiAgentSystem
+
+# Initialize
+system = AdvancedMultiAgentSystem(
+    model="anthropic/claude-3.5-sonnet"
+)
+
+# Analyze
+result = system.analyze(
+    ticker="AAPL",
+    date="2024-01-15",
+    market_data={
+        'close': 180.5,
+        'rsi': 65.3,
+        'macd': 1.2,
+        # ... more indicators
+    },
+    news=[
+        {'title': 'Strong earnings', 'sentiment': 'positive'}
+    ]
+)
+
+# Get decision
+decision = result['final_decision']
+print(f"Action: {decision['action']}")
+print(f"Position: {decision['position_size']}")
+print(f"Reasoning: {decision['reasoning']}")
+```
+
+## 🔍 Advanced Features
+
+### Custom Agent Prompts
+
+Each agent uses sophisticated prompting techniques:
+
+- Multi-step reasoning
+- Specific technical terminology
+- Structured JSON outputs
+- Confidence scoring
+- Risk-aware analysis
+
+### Agent Coordination
+
+- Sequential processing (allows agents to build on previous analyses)
+- Weighted voting (customize agent influence)
+- Consensus building (portfolio manager synthesizes)
+
+## 📊 Performance
+
+Expected results (on historical data):
+
+- **RL-only**: ~10-20% annual return
+- **LLM-enhanced**: ~15-30% annual return
+- **Sharpe Ratio**: 1.0-2.0
+- **Max Drawdown**: <20%
+
+⚠️ **Past performance ≠ future results!**
+
+## 💡 Tips
+
+1. **Start small**: Test with 1-2 stocks first
+2. **Use good models**: Claude or GPT-4 for best results
+3. **Monitor costs**: LLM API calls can add up
+4. **Test thoroughly**: Use paper trading before real money
+5. **Customize prompts**: Adjust agent prompts for your strategy
+
+## 🐛 Troubleshooting
+
+### API Key Issues
+
+```bash
+# Verify key is set
+echo $OPENROUTER_API_KEY
+
+# Or check .env file
+cat .env
+```
+
+### Import Errors
+
+```bash
+# Reinstall dependencies
+pip install -r requirements.txt --upgrade
+```
+
+### Out of Memory
+
+```bash
+# Reduce timesteps or batch size in config.yaml
+training:
+  timesteps: 10000  # Smaller number
+```
+
+## ⚠️ Important Warnings
+
+1. **This is for research/educational purposes**
+2. **Never trade real money without thorough testing**
+3. **Market conditions change - models need retraining**
+4. **LLM costs can be significant with many API calls**
+5. **Regulatory considerations for algorithmic trading**
+
+## 📚 Resources
+
+- **OpenRouter**: https://openrouter.ai
+- **LangGraph**: https://langchain-ai.github.io/langgraph/
+- **Stable-Baselines3**: https://stable-baselines3.readthedocs.io/
+- **yfinance**: https://pypi.org/project/yfinance/

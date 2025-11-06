@@ -1,118 +1,104 @@
-# RL + LLM Trading System (Simplified)
+# LLM-Enhanced Reinforcement Learning Trading System
 
-A streamlined trading system combining **Reinforcement Learning** with **Advanced Multi-Agent LLM** analysis using OpenRouter.
+A sophisticated trading system that combines deep reinforcement learning with multi-agent LLM analysis for automated stock trading decisions. The system uses stable-baselines3 for RL training and LangChain with OpenRouter for coordinated multi-agent decision making.
 
-## 🎯 Key Features
+## Overview
 
-- **Traditional RL Trading**: PPO agent trained on market data
-- **Advanced Multi-Agent LLM**: 4 specialized AI agents provide deep analysis
-  - 🔧 Technical Analyst (chart patterns, indicators)
-  - 📊 Fundamental Analyst (valuation, growth)
-  - 💭 Sentiment Analyst (news, psychology)
-  - ⚠️ Risk Manager (position sizing, risk assessment)
-- **OpenRouter Integration**: Use any LLM (Claude, GPT, Llama, etc.)
-- **Simple Structure**: Just 8 files, easy to understand and modify
+This project implements a hybrid trading system that leverages both traditional reinforcement learning and modern large language models:
 
-## 📁 Project Structure
+- **RL Agent**: PPO (Proximal Policy Optimization) agent trained on historical market data
+- **Multi-Agent LLM System**: Specialized AI agents (Technical, Fundamental, Sentiment, Risk) that provide strategic guidance
+- **Real-time Analysis**: Streamlit-based interface for testing and visualizing LLM decisions
+- **Market Data**: Integration with Exa API for news sentiment and synthetic market data generation
 
-```
-rl_trading_simple/
-├── requirements.txt          # Dependencies
-├── .env.example             # API key template
-├── config/
-│   └── config.yaml          # All settings
-├── src/
-│   ├── data_handler.py      # Data fetching & processing
-│   ├── trading_env.py       # Trading environment
-│   └── multi_agent_system.py  # LLM multi-agent system
-└── scripts/
-    └── train.py             # Training script
-```
+## Architecture
 
-## 🚀 Quick Start
+### Core Components
 
-### 1. Install Dependencies
+1. **Trading Environment** (`src/trading_env.py`)
+   - Gymnasium-compatible environment for stock trading simulation
+   - Continuous action space for position sizing (-1 to 1)
+   - Realistic transaction costs (commission and slippage)
+   - Portfolio tracking and performance metrics
 
+2. **Data Handler** (`src/data_handler.py`)
+   - Market data fetching and preprocessing
+   - Technical indicator calculation (RSI, MACD, Bollinger Bands, etc.)
+   - News aggregation via Exa API
+   - Synthetic data generation for testing
+
+3. **Multi-Agent System** (`src/multi_agent_system.py`)
+   - Four specialized agents with distinct roles:
+     - **Technical Analyst**: Chart patterns and technical indicators
+     - **Fundamental Analyst**: Valuation and market conditions
+     - **Sentiment Analyst**: News and market sentiment analysis
+     - **Risk Manager**: Portfolio risk assessment
+   - Coordinator agent that synthesizes recommendations into actionable decisions
+   - Structured output using Pydantic models for consistency
+
+4. **Training Pipeline** (`scripts/train.py`)
+   - Multiple training modes (RL-only, LLM-enhanced, testing)
+   - Automated evaluation and checkpoint management
+   - TensorBoard integration for monitoring
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip package manager
+
+### Setup
+
+1. Clone the repository:
 ```bash
-pip install -r requirements.txt
+git clone <repository-url>
+cd <repository-name>
 ```
 
-### 2. Setup API Key
+2. Install dependencies:
+```bash
+pip install -r requirements.txt -c constraints.txt
+```
 
-Get your OpenRouter API key from [openrouter.ai](https://openrouter.ai)
-
+3. Configure environment variables:
 ```bash
 cp .env.example .env
-# Edit .env and add your OPENROUTER_API_KEY
 ```
 
-### 3. Train RL Agent (Traditional)
-
-```bash
-python scripts/train.py --mode rl --timesteps 50000
+Edit `.env` and add your API keys:
+```
+OPENROUTER_API_KEY=your_openrouter_key_here
+EXA_API_KEY=your_exa_key_here
 ```
 
-### 4. Test Multi-Agent LLM System
+### API Keys
 
-```bash
-python scripts/train.py --mode test-llm
-```
+- **OpenRouter API**: Required for LLM multi-agent analysis. Get your key at [openrouter.ai](https://openrouter.ai)
+- **Exa API**: Required for real-time news fetching. Get your key at [exa.ai](https://exa.ai)
 
-### 5. Train with LLM Enhancement
+## Configuration
 
-```bash
-python scripts/train.py --mode llm --timesteps 50000
-```
-
-## 🤖 Multi-Agent System
-
-The system uses **LangGraph** to orchestrate 4 specialized agents:
-
-### Agent Flow:
-
-```
-Technical Analyst → Fundamental Analyst → Sentiment Analyst → Risk Manager → Portfolio Manager
-```
-
-Each agent:
-
-- Performs **deep, expert-level analysis**
-- Provides **detailed reasoning**
-- Votes with **confidence scores**
-- Uses **advanced prompting** for quality
-
-### Example Output:
-
-```
-🔧 Technical Analyst: BUY (confidence: 85%)
-📊 Fundamental Analyst: STRONG_BUY (confidence: 90%)
-💭 Sentiment Analyst: BUY (confidence: 75%)
-⚠️  Risk Manager: BUY (confidence: 70%)
-
-🎯 Final Decision: STRONG_BUY
-   Position Size: 25%
-   Confidence: 80%
-   Stop Loss: 5%
-   Target: 15%
-```
-
-## ⚙️ Configuration
-
-Edit `config/config.yaml`:
+Edit `config/config.yaml` to customize the system:
 
 ```yaml
-# Data
 data:
   tickers: ["AAPL", "GOOGL", "MSFT"]
   start_date: "2022-01-01"
   end_date: "2024-01-01"
+  test_split: 0.2
 
-# LLM Model (OpenRouter)
+trading:
+  initial_capital: 100000
+  commission: 0.001
+  slippage: 0.0005
+  max_position: 0.3
+
 llm:
-  model: "anthropic/claude-3.5-sonnet" # or any model
+  model: "google/gemini-2.5-flash-lite-preview-09-2025"
   temperature: 0.7
+  max_tokens: 2000
 
-# Agent Weights
 agents:
   technical_analyst:
     enabled: true
@@ -120,208 +106,230 @@ agents:
   fundamental_analyst:
     enabled: true
     weight: 0.25
-  # ... etc
+  sentiment_analyst:
+    enabled: true
+    weight: 0.25
+  risk_manager:
+    enabled: true
+    weight: 0.25
+
+training:
+  algorithm: "ppo"
+  timesteps: 100000
+  eval_freq: 10000
 ```
 
-## 📊 Training Modes
+## Usage
 
-### Mode 1: Traditional RL Only
+### 1. Test Exa API Integration
 
-Pure reinforcement learning without LLM.
-
+Verify your Exa API setup:
 ```bash
-python scripts/train.py --mode rl --timesteps 100000
+python test_exa.py
 ```
 
-### Mode 2: LLM-Enhanced RL
+This will test news fetching for multiple tickers and time windows.
 
-RL agent learns with strategic guidance from LLM multi-agent system.
+### 2. Train Traditional RL Agent
 
+Train a PPO agent using only reinforcement learning:
 ```bash
-python scripts/train.py --mode llm --timesteps 100000
+python scripts/train.py --mode rl
 ```
 
-### Mode 3: Test LLM System
+Optional arguments:
+- `--config`: Path to config file (default: `config/config.yaml`)
+- `--timesteps`: Override training timesteps
 
-Test the multi-agent system independently on sample data.
+### 3. Train LLM-Enhanced Agent
 
+Train with LLM multi-agent strategic guidance:
+```bash
+python scripts/train.py --mode llm --timesteps 50000
+```
+
+The LLM system generates strategic recommendations that guide the RL agent's learning process.
+
+### 4. Test Multi-Agent System
+
+Launch interactive Streamlit interface:
 ```bash
 python scripts/train.py --mode test-llm
 ```
 
-## 🎓 How It Works
-
-### Traditional RL Flow:
-
-```
-Market Data → Feature Engineering → Trading Env → PPO Agent → Actions
-```
-
-### LLM-Enhanced Flow:
-
-```
-Market Data ─┐
-News Data ───┼→ Multi-Agent Analysis → Strategic Signals ─┐
-             │                                             ├→ PPO Agent → Actions
-             └─────────────────────────────────────────────┘
-```
-
-## 🔧 OpenRouter Models
-
-You can use any model from OpenRouter:
-
-```yaml
-# Claude (Recommended)
-model: "anthropic/claude-3.5-sonnet"
-
-# GPT-4
-model: "openai/gpt-4-turbo"
-
-# Open Source
-model: "meta-llama/llama-3-70b-instruct"
-model: "mistralai/mixtral-8x7b-instruct"
-```
-
-See all models: [openrouter.ai/models](https://openrouter.ai/models)
-
-## 📈 Features
-
-### Data Handling
-
-- ✅ yfinance integration (free, no API key needed)
-- ✅ Technical indicators (SMA, RSI, MACD, BB, etc.)
-- ✅ Automatic feature engineering
-- ✅ Train/test splitting
-
-### Trading Environment
-
-- ✅ Gymnasium-compatible
-- ✅ Realistic costs (commission, slippage)
-- ✅ Continuous action space
-- ✅ Portfolio tracking
-
-### RL Agent
-
-- ✅ PPO implementation (Stable-Baselines3)
-- ✅ Configurable hyperparameters
-- ✅ TensorBoard logging
-- ✅ Model checkpointing
-
-### Multi-Agent LLM
-
-- ✅ 4 specialized expert agents
-- ✅ LangGraph orchestration
-- ✅ Weighted voting system
-- ✅ Detailed reasoning
-- ✅ OpenRouter integration
-
-## 🎯 Example Usage
-
-```python
-from src.multi_agent_system import AdvancedMultiAgentSystem
-
-# Initialize
-system = AdvancedMultiAgentSystem(
-    model="anthropic/claude-3.5-sonnet"
-)
-
-# Analyze
-result = system.analyze(
-    ticker="AAPL",
-    date="2024-01-15",
-    market_data={
-        'close': 180.5,
-        'rsi': 65.3,
-        'macd': 1.2,
-        # ... more indicators
-    },
-    news=[
-        {'title': 'Strong earnings', 'sentiment': 'positive'}
-    ]
-)
-
-# Get decision
-decision = result['final_decision']
-print(f"Action: {decision['action']}")
-print(f"Position: {decision['position_size']}")
-print(f"Reasoning: {decision['reasoning']}")
-```
-
-## 🔍 Advanced Features
-
-### Custom Agent Prompts
-
-Each agent uses sophisticated prompting techniques:
-
-- Multi-step reasoning
-- Specific technical terminology
-- Structured JSON outputs
-- Confidence scoring
-- Risk-aware analysis
-
-### Agent Coordination
-
-- Sequential processing (allows agents to build on previous analyses)
-- Weighted voting (customize agent influence)
-- Consensus building (portfolio manager synthesizes)
-
-## 📊 Performance
-
-Expected results (on historical data):
-
-- **RL-only**: ~10-20% annual return
-- **LLM-enhanced**: ~15-30% annual return
-- **Sharpe Ratio**: 1.0-2.0
-- **Max Drawdown**: <20%
-
-⚠️ **Past performance ≠ future results!**
-
-## 💡 Tips
-
-1. **Start small**: Test with 1-2 stocks first
-2. **Use good models**: Claude or GPT-4 for best results
-3. **Monitor costs**: LLM API calls can add up
-4. **Test thoroughly**: Use paper trading before real money
-5. **Customize prompts**: Adjust agent prompts for your strategy
-
-## 🐛 Troubleshooting
-
-### API Key Issues
-
+Or run directly:
 ```bash
-# Verify key is set
-echo $OPENROUTER_API_KEY
+streamlit run streamlit_app.py
+```
 
-# Or check .env file
+The interface provides:
+- Real-time multi-agent analysis
+- Individual agent recommendations with confidence scores
+- Final trading decision with price targets
+- Market data visualization
+- Recent news sentiment analysis
+
+## Project Structure
+
+```
+.
+├── config/
+│   └── config.yaml           # System configuration
+├── scripts/
+│   └── train.py              # Training and evaluation script
+├── src/
+│   ├── data_handler.py       # Data fetching and processing
+│   ├── trading_env.py        # Trading environment
+│   └── multi_agent_system.py # LLM multi-agent coordination
+├── checkpoints/              # Saved model checkpoints
+├── logs/                     # Training logs and TensorBoard data
+├── streamlit_app.py          # Interactive testing interface
+├── test_exa.py              # Exa API integration tests
+├── requirements.txt          # Python dependencies
+├── constraints.txt           # Dependency constraints
+└── README.md                # This file
+```
+
+## Features
+
+### Technical Indicators
+- Relative Strength Index (RSI)
+- Moving Average Convergence Divergence (MACD)
+- Simple Moving Averages (20-day, 50-day)
+- Bollinger Bands with position calculation
+- Volume analysis and momentum indicators
+
+### Multi-Agent Analysis
+Each agent provides:
+- **Recommendation**: Buy, sell, or hold
+- **Confidence**: 0-100% confidence score
+- **Reasoning**: Detailed explanation of recommendation
+
+The coordinator synthesizes these into:
+- **Action**: Final trading decision
+- **Position Size**: Recommended position as decimal (0.0-1.0)
+- **Price Targets**: Entry, stop-loss, and take-profit levels
+- **Time Horizon**: Short, medium, or long-term
+- **Conviction**: Low, medium, or high conviction level
+
+### Trading Environment Features
+- Continuous action space for flexible position sizing
+- Realistic transaction costs (commission + slippage)
+- Portfolio state tracking (cash, shares, total value)
+- Comprehensive history recording for analysis
+- Normalized observations for stable learning
+
+## Training Modes
+
+### Mode 1: Traditional RL
+Pure reinforcement learning without LLM guidance. Best for baseline performance and faster training.
+
+### Mode 2: LLM-Enhanced
+RL agent receives strategic recommendations from the multi-agent LLM system at key decision points. Combines pattern recognition from RL with reasoning from LLMs.
+
+### Mode 3: Test LLM
+Interactive testing mode with Streamlit UI. Allows real-time analysis of individual stocks with full visibility into agent reasoning.
+
+## Output and Evaluation
+
+### Training Outputs
+- Model checkpoints saved to `checkpoints/`
+- TensorBoard logs in `logs/`
+- Best model automatically saved during evaluation
+
+### Evaluation Metrics
+- Mean episode return
+- Standard deviation of returns
+- Min/max returns across episodes
+- Final portfolio value
+- Percentage return on initial capital
+
+### Analysis Downloads
+The Streamlit interface allows downloading complete analysis results as JSON, including:
+- Individual agent analyses
+- Final decision with all parameters
+- Market data snapshot
+- News articles and sentiment
+
+## Dependencies
+
+### Core ML/RL
+- PyTorch: Deep learning framework
+- stable-baselines3: RL algorithms implementation
+- gymnasium: Environment interface
+- NumPy/Pandas: Data manipulation
+
+### LLM and Multi-Agent
+- LangChain: LLM orchestration
+- LangChain-OpenAI: OpenRouter integration
+- LangGraph: Multi-agent workflow
+
+### Data and Utilities
+- exa-py: News and content search API
+- yfinance: Market data (optional)
+- pandas-ta: Technical analysis
+- Streamlit: Interactive UI
+- PyYAML: Configuration management
+
+## Known Limitations
+
+1. **Market Data**: Currently uses synthetic data generation. Real market data integration via yfinance or other APIs can be added.
+
+2. **News Analysis**: Exa API primarily provides news content, not structured OHLCV data. Price data is synthetic but realistic.
+
+3. **API Rate Limits**: Exa API has rate limits. The system samples strategically to avoid excessive calls.
+
+4. **Transaction Costs**: Simplified model using fixed commission and slippage percentages.
+
+## Future Enhancements
+
+- Integration with real market data APIs (Alpha Vantage, IEX Cloud)
+- Live trading execution capabilities
+- Advanced risk management (portfolio optimization, diversification)
+- Backtesting framework with multiple strategies
+- Paper trading mode for validation
+- Additional agent types (macro analyst, options specialist)
+- Ensemble methods combining multiple RL algorithms
+
+## Troubleshooting
+
+### Common Issues
+
+**Import Errors**: Ensure all dependencies are installed with constraints:
+```bash
+pip install -r requirements.txt -c constraints.txt
+```
+
+**API Key Errors**: Verify `.env` file exists and contains valid keys:
+```bash
 cat .env
 ```
 
-### Import Errors
-
+**Exa API Issues**: Test the integration separately:
 ```bash
-# Reinstall dependencies
-pip install -r requirements.txt --upgrade
+python test_exa.py
 ```
 
-### Out of Memory
-
+**Training Issues**: Check TensorBoard for insights:
 ```bash
-# Reduce timesteps or batch size in config.yaml
-training:
-  timesteps: 10000  # Smaller number
+tensorboard --logdir logs/
 ```
 
-## ⚠️ Important Warnings
+## License
 
-1. **This is for research/educational purposes**
-2. **Never trade real money without thorough testing**
-3. **Market conditions change - models need retraining**
-4. **LLM costs can be significant with many API calls**
-5. **Regulatory considerations for algorithmic trading**
+This project is provided as-is for educational and research purposes.
 
-## 📚 Resources
+## Contributing
 
-- **OpenRouter**: https://openrouter.ai
-- **LangGraph**: https://langchain-ai.github.io/langgraph/
-- **Stable-Baselines3**: https://stable-baselines3.readthedocs.io/
-- **yfinance**: https://pypi.org/project/yfinance/
+Contributions are welcome. Please ensure:
+- Code follows existing style and structure
+- New features include appropriate tests
+- Documentation is updated accordingly
+- Commit messages are clear and descriptive
+
+## Acknowledgments
+
+- stable-baselines3 for RL implementations
+- LangChain for multi-agent orchestration
+- Exa for news and content search API
+- OpenRouter for LLM access

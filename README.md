@@ -1,45 +1,90 @@
-# LLM-Enhanced Reinforcement Learning Trading System
+# LLM-Enhanced Trading Analysis Platform
 
-A sophisticated trading system that combines deep reinforcement learning with multi-agent LLM analysis for automated stock trading decisions. The system uses stable-baselines3 for RL training and LangChain with OpenRouter for coordinated multi-agent decision making.
+A professional enterprise-grade trading system that combines multi-agent LLM analysis for intelligent stock trading decisions. The system uses Groq's fast LLM inference with specialized AI agents to provide comprehensive trading analysis.
+
+**🚀 Live Demo**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
 
 ## Overview
 
-This project implements a hybrid trading system that leverages both traditional reinforcement learning and modern large language models:
+This project implements an advanced multi-agent trading analysis system that leverages modern large language models:
 
-- **RL Agent**: PPO (Proximal Policy Optimization) agent trained on historical market data
-- **Multi-Agent LLM System**: Specialized AI agents (Technical, Fundamental, Sentiment, Risk) that provide strategic guidance
-- **Real-time Analysis**: Streamlit-based interface for testing and visualizing LLM decisions
-- **Market Data**: Integration with Exa API for news sentiment and synthetic market data generation
+- **Multi-Agent LLM System**: Four specialized AI agents (Technical, Fundamental, Sentiment, Risk) that provide strategic guidance
+- **Professional UI**: Clean, enterprise-grade Streamlit interface for real-time analysis
+- **Fast Inference**: Powered by Groq API for rapid LLM responses
+- **Real-time News**: Integration with Exa API for news sentiment analysis
+- **Market Analysis**: Comprehensive technical indicators and market data processing
+
+## Live Application
+
+**Try it now**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
+
+Simply select a ticker and click "Run Analysis" to get instant trading insights from our multi-agent system.
+
+## Features
+
+### Multi-Agent Analysis System
+
+Four specialized AI agents analyze different aspects of trading decisions:
+
+1. **Technical Analyst**
+   - Chart patterns and price action analysis
+   - Technical indicators (RSI, MACD, Bollinger Bands)
+   - Moving averages and momentum signals
+   - Volume analysis
+
+2. **Fundamental Analyst**
+   - Company valuation assessment
+   - Market conditions evaluation
+   - Financial metrics analysis
+   - Industry trends
+
+3. **Sentiment Analyst**
+   - Real-time news processing
+   - Market sentiment analysis
+   - Social signals and trends
+   - News impact assessment
+
+4. **Risk Manager**
+   - Portfolio risk assessment
+   - Position sizing recommendations
+   - Stop loss and take profit levels
+   - Risk/reward analysis
+
+### Professional UI
+
+- Clean, minimal design without clutter
+- Single-page workflow for ease of use
+- Tab-based agent analysis view
+- Real-time data visualization
+- Export functionality for results
 
 ## Architecture
 
 ### Core Components
 
-1. **Trading Environment** (`src/trading_env.py`)
-   - Gymnasium-compatible environment for stock trading simulation
-   - Continuous action space for position sizing (-1 to 1)
-   - Realistic transaction costs (commission and slippage)
-   - Portfolio tracking and performance metrics
+1. **Multi-Agent System** (`src/multi_agent_system.py`)
+   - Groq-powered LLM agents for fast inference
+   - Structured outputs using Pydantic models
+   - Coordinator agent for decision synthesis
+   - Configurable agent weights and parameters
 
 2. **Data Handler** (`src/data_handler.py`)
    - Market data fetching and preprocessing
-   - Technical indicator calculation (RSI, MACD, Bollinger Bands, etc.)
+   - Technical indicator calculation
    - News aggregation via Exa API
    - Synthetic data generation for testing
 
-3. **Multi-Agent System** (`src/multi_agent_system.py`)
-   - Four specialized agents with distinct roles:
-     - **Technical Analyst**: Chart patterns and technical indicators
-     - **Fundamental Analyst**: Valuation and market conditions
-     - **Sentiment Analyst**: News and market sentiment analysis
-     - **Risk Manager**: Portfolio risk assessment
-   - Coordinator agent that synthesizes recommendations into actionable decisions
-   - Structured output using Pydantic models for consistency
+3. **Trading Environment** (`src/trading_env.py`)
+   - Gymnasium-compatible environment
+   - Continuous action space for position sizing
+   - Realistic transaction costs
+   - Portfolio tracking and metrics
 
-4. **Training Pipeline** (`scripts/train.py`)
-   - Multiple training modes (RL-only, LLM-enhanced, testing)
-   - Automated evaluation and checkpoint management
-   - TensorBoard integration for monitoring
+4. **Web Application** (`app.py`)
+   - Professional Streamlit interface
+   - Modular render functions
+   - Clean data presentation
+   - JSON export functionality
 
 ## Installation
 
@@ -48,57 +93,80 @@ This project implements a hybrid trading system that leverages both traditional 
 - Python 3.8 or higher
 - pip package manager
 
-### Setup
+### Local Setup
 
-1. Clone the repository:
+1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/bhavuk1409/llm-rl-trading.git
+cd llm-rl-trading
 ```
 
-2. Install dependencies:
+2. **Create virtual environment**
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. **Install dependencies**
 ```bash
 pip install -r requirements.txt -c constraints.txt
 ```
 
-3. Configure environment variables:
+4. **Configure API keys**
 ```bash
 cp .env.example .env
 ```
 
 Edit `.env` and add your API keys:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+EXA_API_KEY=your_exa_api_key_here
 ```
-OPENROUTER_API_KEY=your_openrouter_key_here
-EXA_API_KEY=your_exa_key_here
+
+5. **Run the application**
+```bash
+streamlit run app.py
 ```
+
+The app will open in your browser at `http://localhost:8501`
 
 ### API Keys
 
-- **OpenRouter API**: Required for LLM multi-agent analysis. Get your key at [openrouter.ai](https://openrouter.ai)
-- **Exa API**: Required for real-time news fetching. Get your key at [exa.ai](https://exa.ai)
+- **Groq API**: Get your free key at [console.groq.com](https://console.groq.com)
+  - Fast LLM inference
+  - Multiple model options (LLaMA 3.3, Mixtral, etc.)
+  - Free tier available
+
+- **Exa API**: Get your key at [exa.ai](https://exa.ai)
+  - Real-time news search
+  - AI-powered content retrieval
+  - Free tier available
 
 ## Configuration
 
 Edit `config/config.yaml` to customize the system:
 
 ```yaml
+# Supported tickers
 data:
-  tickers: ["AAPL", "GOOGL", "MSFT"]
+  tickers: ["AAPL", "GOOGL", "MSFT", "TSLA", "NVDA"]
   start_date: "2022-01-01"
   end_date: "2024-01-01"
-  test_split: 0.2
 
+# Trading parameters
 trading:
   initial_capital: 100000
   commission: 0.001
   slippage: 0.0005
   max_position: 0.3
 
+# LLM configuration (Groq)
 llm:
-  model: "google/gemini-2.5-flash-lite-preview-09-2025"
+  model: "llama-3.3-70b-versatile"
   temperature: 0.7
   max_tokens: 2000
 
+# Agent weights
 agents:
   technical_analyst:
     enabled: true
@@ -112,225 +180,156 @@ agents:
   risk_manager:
     enabled: true
     weight: 0.25
-
-training:
-  algorithm: "ppo"
-  timesteps: 100000
-  eval_freq: 10000
 ```
 
 ## Usage
 
-### 1. Test Exa API Integration
+### Web Interface
 
-Verify your Exa API setup:
+1. Open the app (live or local)
+2. Select a ticker from the dropdown
+3. Click "Run Analysis"
+4. View results in organized sections:
+   - Market Data
+   - Technical Indicators
+   - Recent News
+   - Agent Analysis (tabbed view)
+   - Final Trading Decision
+5. Export results as JSON if needed
+
+### Command Line Training
+
+Train an RL agent (optional advanced feature):
+
 ```bash
-python test_exa.py
-```
-
-This will test news fetching for multiple tickers and time windows.
-
-### 2. Train Traditional RL Agent
-
-Train a PPO agent using only reinforcement learning:
-```bash
+# Train with RL only
 python scripts/train.py --mode rl
-```
 
-Optional arguments:
-- `--config`: Path to config file (default: `config/config.yaml`)
-- `--timesteps`: Override training timesteps
-
-### 3. Train LLM-Enhanced Agent
-
-Train with LLM multi-agent strategic guidance:
-```bash
+# Train with LLM enhancement
 python scripts/train.py --mode llm --timesteps 50000
 ```
-
-The LLM system generates strategic recommendations that guide the RL agent's learning process.
-
-### 4. Test Multi-Agent System
-
-Launch interactive Streamlit interface:
-```bash
-python scripts/train.py --mode test-llm
-```
-
-Or run directly:
-```bash
-streamlit run streamlit_app.py
-```
-
-The interface provides:
-- Real-time multi-agent analysis
-- Individual agent recommendations with confidence scores
-- Final trading decision with price targets
-- Market data visualization
-- Recent news sentiment analysis
 
 ## Project Structure
 
 ```
-.
+llm-rl-trading/
+├── app.py                  # Main Streamlit application
 ├── config/
-│   └── config.yaml           # System configuration
-├── scripts/
-│   └── train.py              # Training and evaluation script
+│   └── config.yaml        # System configuration
 ├── src/
-│   ├── data_handler.py       # Data fetching and processing
-│   ├── trading_env.py        # Trading environment
-│   └── multi_agent_system.py # LLM multi-agent coordination
-├── checkpoints/              # Saved model checkpoints
-├── logs/                     # Training logs and TensorBoard data
-├── streamlit_app.py          # Interactive testing interface
-├── test_exa.py              # Exa API integration tests
-├── requirements.txt          # Python dependencies
-├── constraints.txt           # Dependency constraints
-└── README.md                # This file
+│   ├── data_handler.py    # Data fetching and processing
+│   ├── multi_agent_system.py  # LLM multi-agent logic
+│   └── trading_env.py     # RL trading environment
+├── scripts/
+│   └── train.py          # Training scripts
+├── requirements.txt       # Python dependencies
+├── constraints.txt        # Version constraints
+└── .env.example          # API key template
 ```
 
-## Features
+## Technical Stack
 
-### Technical Indicators
-- Relative Strength Index (RSI)
-- Moving Average Convergence Divergence (MACD)
-- Simple Moving Averages (20-day, 50-day)
-- Bollinger Bands with position calculation
-- Volume analysis and momentum indicators
+### Core Technologies
+- **Python 3.8+**: Main programming language
+- **Streamlit**: Web application framework
+- **LangChain**: LLM orchestration
+- **Groq API**: Fast LLM inference
+- **Exa API**: Real-time news search
 
-### Multi-Agent Analysis
-Each agent provides:
-- **Recommendation**: Buy, sell, or hold
-- **Confidence**: 0-100% confidence score
-- **Reasoning**: Detailed explanation of recommendation
+### ML/Data Libraries
+- **Pandas**: Data manipulation
+- **NumPy**: Numerical computing
+- **pandas-ta**: Technical analysis
+- **PyYAML**: Configuration management
 
-The coordinator synthesizes these into:
-- **Action**: Final trading decision
-- **Position Size**: Recommended position as decimal (0.0-1.0)
-- **Price Targets**: Entry, stop-loss, and take-profit levels
-- **Time Horizon**: Short, medium, or long-term
-- **Conviction**: Low, medium, or high conviction level
+### Optional (RL Training)
+- **PyTorch**: Deep learning framework
+- **stable-baselines3**: RL algorithms
+- **Gymnasium**: Environment interface
 
-### Trading Environment Features
-- Continuous action space for flexible position sizing
-- Realistic transaction costs (commission + slippage)
-- Portfolio state tracking (cash, shares, total value)
-- Comprehensive history recording for analysis
-- Normalized observations for stable learning
+## Features Highlight
 
-## Training Modes
+### Real-time Analysis
+- Instant LLM-powered insights
+- Fast inference with Groq API
+- Real-time news integration
+- Comprehensive technical indicators
 
-### Mode 1: Traditional RL
-Pure reinforcement learning without LLM guidance. Best for baseline performance and faster training.
+### Professional UI
+- Clean, minimal design
+- Enterprise-grade appearance
+- No unnecessary clutter
+- Mobile-responsive layout
 
-### Mode 2: LLM-Enhanced
-RL agent receives strategic recommendations from the multi-agent LLM system at key decision points. Combines pattern recognition from RL with reasoning from LLMs.
+### Multi-Agent Intelligence
+- Four specialized AI agents
+- Coordinated decision-making
+- Confidence scoring
+- Detailed reasoning
 
-### Mode 3: Test LLM
-Interactive testing mode with Streamlit UI. Allows real-time analysis of individual stocks with full visibility into agent reasoning.
+### Export Capabilities
+- JSON format export
+- Complete analysis data
+- Timestamped results
+- Easy integration
 
-## Output and Evaluation
+## Development
 
-### Training Outputs
-- Model checkpoints saved to `checkpoints/`
-- TensorBoard logs in `logs/`
-- Best model automatically saved during evaluation
+### Code Style
+- Modular function design
+- Clear separation of concerns
+- Comprehensive docstrings
+- Type hints where applicable
 
-### Evaluation Metrics
-- Mean episode return
-- Standard deviation of returns
-- Min/max returns across episodes
-- Final portfolio value
-- Percentage return on initial capital
-
-### Analysis Downloads
-The Streamlit interface allows downloading complete analysis results as JSON, including:
-- Individual agent analyses
-- Final decision with all parameters
-- Market data snapshot
-- News articles and sentiment
-
-## Dependencies
-
-### Core ML/RL
-- PyTorch: Deep learning framework
-- stable-baselines3: RL algorithms implementation
-- gymnasium: Environment interface
-- NumPy/Pandas: Data manipulation
-
-### LLM and Multi-Agent
-- LangChain: LLM orchestration
-- LangChain-OpenAI: OpenRouter integration
-- LangGraph: Multi-agent workflow
-
-### Data and Utilities
-- exa-py: News and content search API
-- yfinance: Market data (optional)
-- pandas-ta: Technical analysis
-- Streamlit: Interactive UI
-- PyYAML: Configuration management
-
-## Known Limitations
-
-1. **Market Data**: Currently uses synthetic data generation. Real market data integration via yfinance or other APIs can be added.
-
-2. **News Analysis**: Exa API primarily provides news content, not structured OHLCV data. Price data is synthetic but realistic.
-
-3. **API Rate Limits**: Exa API has rate limits. The system samples strategically to avoid excessive calls.
-
-4. **Transaction Costs**: Simplified model using fixed commission and slippage percentages.
-
-## Future Enhancements
-
-- Integration with real market data APIs (Alpha Vantage, IEX Cloud)
-- Live trading execution capabilities
-- Advanced risk management (portfolio optimization, diversification)
-- Backtesting framework with multiple strategies
-- Paper trading mode for validation
-- Additional agent types (macro analyst, options specialist)
-- Ensemble methods combining multiple RL algorithms
-
-## Troubleshooting
-
-### Common Issues
-
-**Import Errors**: Ensure all dependencies are installed with constraints:
+### Testing
 ```bash
-pip install -r requirements.txt -c constraints.txt
+# Syntax validation
+python -m py_compile app.py
+
+# Test imports
+python -c "from src.multi_agent_system import AdvancedMultiAgentSystem"
 ```
 
-**API Key Errors**: Verify `.env` file exists and contains valid keys:
-```bash
-cat .env
-```
+## Deployment
 
-**Exa API Issues**: Test the integration separately:
-```bash
-python test_exa.py
-```
+This app is deployed on Streamlit Cloud:
+- **Live URL**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
+- **Automatic updates** from main branch
+- **Environment variables** configured in Streamlit Cloud
 
-**Training Issues**: Check TensorBoard for insights:
-```bash
-tensorboard --logdir logs/
-```
+To deploy your own instance:
+1. Fork this repository
+2. Sign up at [streamlit.io/cloud](https://streamlit.io/cloud)
+3. Connect your GitHub repository
+4. Add API keys as secrets
+5. Deploy!
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
 This project is provided as-is for educational and research purposes.
 
-## Contributing
-
-Contributions are welcome. Please ensure:
-- Code follows existing style and structure
-- New features include appropriate tests
-- Documentation is updated accordingly
-- Commit messages are clear and descriptive
-
 ## Acknowledgments
 
-- stable-baselines3 for RL implementations
-- LangChain for multi-agent orchestration
-- Exa for news and content search API
-- OpenRouter for LLM access
-# rl-trading1
+- **Groq** for fast LLM inference
+- **Exa** for AI-powered news search
+- **LangChain** for LLM orchestration
+- **Streamlit** for the web framework
+- **stable-baselines3** for RL algorithms
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/bhavuk1409/llm-rl-trading/issues)
+- **Live Demo**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
+
+---
+
+**Made with ❤️ using Groq, Exa, and Streamlit**

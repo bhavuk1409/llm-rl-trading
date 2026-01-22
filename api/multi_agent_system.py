@@ -1,6 +1,6 @@
 """
 Advanced Multi-Agent System for Trading Decisions
-Uses LangChain with OpenRouter for multi-agent collaboration
+Uses LangChain with Groq for multi-agent collaboration
 """
 
 import os
@@ -38,13 +38,13 @@ class FinalDecision(BaseModel):
 
 class AdvancedMultiAgentSystem:
     """
-    Multi-agent trading system using LangChain + OpenRouter.
+    Multi-agent trading system using LangChain + Groq.
     Each agent specializes in one analysis type.
     """
     
     def __init__(
         self,
-        model: str = "google/gemini-2.5-flash-lite-preview-09-2025",
+        model: str = "llama-3.3-70b-versatile",
         temperature: float = 0.7,
         agent_config: Dict[str, Any] = None
     ):
@@ -52,7 +52,7 @@ class AdvancedMultiAgentSystem:
         Initialize multi-agent system.
         
         Args:
-            model: OpenRouter model name
+            model: Groq model name (e.g., llama-3.3-70b-versatile, llama-3.1-70b-versatile, gemma2-9b-it)
             temperature: LLM temperature
             agent_config: Agent weights and settings
         """
@@ -65,16 +65,16 @@ class AdvancedMultiAgentSystem:
             'risk_manager': {'enabled': True, 'weight': 0.25}
         }
         
-        # Initialize LLM
-        api_key = os.getenv("OPENROUTER_API_KEY")
+        # Initialize LLM with Groq
+        api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
-            raise ValueError("OPENROUTER_API_KEY not found in environment")
+            raise ValueError("GROQ_API_KEY not found in environment")
         
         self.llm = ChatOpenAI(
             model=model,
             temperature=temperature,
             openai_api_key=api_key,
-            openai_api_base="https://openrouter.ai/api/v1",
+            openai_api_base="https://api.groq.com/openai/v1",
             max_tokens=2000
         )
         

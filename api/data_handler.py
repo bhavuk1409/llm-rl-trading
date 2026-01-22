@@ -103,8 +103,7 @@ class DataHandler:
                 query=query,
                 type="neural",
                 num_results=3,
-                text={"max_characters": 2000},
-                use_autoprompt=True
+                text={"max_characters": 2000}
             )
             
             # Try to extract price data from results
@@ -285,7 +284,6 @@ class DataHandler:
                 type="neural",
                 num_results=10,
                 start_published_date=start_date.strftime("%Y-%m-%d"),
-                use_autoprompt=True,
                 text={"max_characters": 500}
             )
             

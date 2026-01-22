@@ -2,7 +2,7 @@
 
 A professional enterprise-grade trading system that combines multi-agent LLM analysis for intelligent stock trading decisions. The system uses Groq's fast LLM inference with specialized AI agents to provide comprehensive trading analysis.
 
-**🚀 Live Demo**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
+**🚀 Live Demo**: https://llm-trading-platform.streamlit.app
 
 ## Overview
 
@@ -16,7 +16,7 @@ This project implements an advanced multi-agent trading analysis system that lev
 
 ## Live Application
 
-**Try it now**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
+**Try it now**: https://llm-trading-platform.streamlit.app
 
 Simply select a ticker and click "Run Analysis" to get instant trading insights from our multi-agent system.
 
@@ -328,7 +328,7 @@ This project is provided as-is for educational and research purposes.
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/bhavuk1409/llm-rl-trading/issues)
-- **Live Demo**: [https://llm-rl-trading.streamlit.app](https://llm-rl-trading.streamlit.app)
+- **Live Demo**: [https://llm-trading-platform.streamlit.app)
 
 ---
 
